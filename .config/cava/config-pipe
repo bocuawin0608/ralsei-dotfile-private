@@ -1,0 +1,19 @@
+[general]
+framerate = 30
+bars = 1
+sleep_timer = 0
+
+[input]
+method = pipewire
+source = auto
+
+[output]
+method = raw
+# Named pipe for subtitle/widget overlay consumption
+raw_target = /tmp/cava_output
+data_format = binary
+bits = 8
+channels = mono
+
+[smoothing]
+noise_reduction = 66

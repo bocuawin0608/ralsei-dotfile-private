@@ -1,0 +1,10 @@
+module Panels
+TopBar               1.0 TopBar.qml
+BottomBar            1.0 BottomBar.qml
+Overview             1.0 Overview.qml
+SidebarLeft          1.0 SidebarLeft.qml
+SidebarRight         1.0 SidebarRight.qml
+WallpaperSelector    1.0 WallpaperSelector.qml
+SessionMenu          1.0 SessionMenu.qml
+SubtitleOverlay      1.0 SubtitleOverlay.qml
+AuthFailureOverlay   1.0 AuthFailureOverlay.qml

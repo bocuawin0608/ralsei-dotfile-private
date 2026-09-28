@@ -1,0 +1,9 @@
+module Components
+ClockWidget           1.0 ClockWidget.qml
+WorkspaceWidget       1.0 WorkspaceWidget.qml
+VolumeWidget          1.0 VolumeWidget.qml
+NetworkWidget         1.0 NetworkWidget.qml
+MediaWidget           1.0 MediaWidget.qml
+SystemStatsWidget     1.0 SystemStatsWidget.qml
+NotificationIndicator 1.0 NotificationIndicator.qml
+ActiveWindowWidget    1.0 ActiveWindowWidget.qml

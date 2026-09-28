@@ -1,0 +1,8 @@
+module Services
+singleton Theme            1.0 Theme.qml
+singleton HyprlandService  1.0 HyprlandService.qml
+singleton AudioService     1.0 AudioService.qml
+singleton NetworkService   1.0 NetworkService.qml
+singleton MediaService     1.0 MediaService.qml
+singleton AIService        1.0 AIService.qml
+singleton SubtitleService  1.0 SubtitleService.qml

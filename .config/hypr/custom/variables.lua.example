@@ -1,0 +1,57 @@
+-- =============================================================================
+-- custom/variables.lua.example
+-- Copy this file to custom/variables.lua and uncomment the lines you want
+-- to override.  This file is loaded AFTER hyprland/variables.lua so any
+-- assignment here wins.
+-- =============================================================================
+
+-- ── Applications ────────────────────────────────────────────────────────────
+-- terminal    = "alacritty"
+-- terminal    = "foot"
+-- terminal    = "wezterm"
+
+-- browser     = "chromium"
+-- browser     = "librewolf"
+-- browser     = "brave"
+
+-- fileManager = "thunar"
+-- fileManager = "dolphin"
+-- fileManager = "nemo"
+
+-- codeEditor  = "code-oss"
+-- codeEditor  = "vscodium"
+-- codeEditor  = "nvim"           -- opens in terminal
+
+-- textEditor  = "mousepad"
+-- textEditor  = "kate"
+
+-- volumeMixer = "easyeffects"
+-- volumeMixer = "qpwgraph"
+
+-- settingsApp = "kde-systemsettings"
+-- settingsApp = "xfce4-settings-manager"
+
+-- taskManager = "htop"           -- opens in terminal
+-- taskManager = "btop"
+
+-- officeSoftware = "onlyoffice-desktopeditors"
+-- officeSoftware = "lowriter"
+
+-- ── Quickshell ───────────────────────────────────────────────────────────────
+-- qsConfig = "minimal"
+-- qsConfig = "compact"
+
+-- ── Performance ──────────────────────────────────────────────────────────────
+-- Uncomment ONE of the following to override the PERFORMANCE_PROFILE env var:
+-- PERFORMANCE_PROFILE = "performance"
+-- PERFORMANCE_PROFILE = "balanced"
+-- PERFORMANCE_PROFILE = "beautiful"
+
+-- ── Keyboard layout ──────────────────────────────────────────────────────────
+-- KB_LAYOUT  = "de"
+-- KB_VARIANT = "nodeadkeys"
+-- KB_OPTIONS = "caps:escape"
+
+-- ── Workspace group size ─────────────────────────────────────────────────────
+-- Number of workspaces per monitor group (default: 10)
+-- WORKSPACE_GROUP_SIZE = 10

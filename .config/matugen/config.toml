@@ -1,0 +1,14 @@
+[config]
+# Color scheme quality (1-100, higher = more accurate but slower)
+quality = 40
+# Material Design 3 scheme type:
+# tonal-spot | expressive | fidelity | monochrome | neutral | vibrant | fruit-salad | rainbow
+scheme_type = "tonal-spot"
+# Include color names in template variables
+color_names = true
+
+[templates]
+
+[templates.colors_json]
+input_path  = "~/.config/matugen/templates/colors.json"
+output_path = "~/.cache/matugen/colors.json"
