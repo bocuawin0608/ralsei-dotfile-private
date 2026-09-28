@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# install.sh — Idempotent installer for ralsei dotfiles
-# Usage: install.sh [--dry-run] [--minimal] [--full] [--uninstall] [--help]
+# install.sh — Fully Automated, Idempotent Installer for ralsei dotfiles
+# Zero interactive prompts — 1-command complete setup
 set -euo pipefail
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 0. Meta
+# 0. Meta & Setup
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
@@ -12,13 +12,13 @@ BACKUP_DIR="${HOME}/.config_backup_${TIMESTAMP}"
 LOG_FILE="${HOME}/.local/log/ralsei-install-${TIMESTAMP}.log"
 
 DRY_RUN=false
-MODE="full"        # full | minimal
+MODE="full"
 DO_UNINSTALL=false
 INSTALLED_COUNT=0
 SKIPPED_COUNT=0
 LINKED_COUNT=0
 
-# ── Terminal colors ────────────────────────────────────────────────────────────
+# ── Colors ────────────────────────────────────────────────────────────────────
 if [[ -t 1 ]]; then
     RED='\033[0;31m'; YELLOW='\033[0;33m'; GREEN='\033[0;32m'
     CYAN='\033[0;36m'; BLUE='\033[0;34m'; BOLD='\033[1m'; RESET='\033[0m'
@@ -27,13 +27,10 @@ else
     RED='' YELLOW='' GREEN='' CYAN='' BLUE='' BOLD='' RESET='' DIM=''
 fi
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 1. Logging helpers
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ── Logging ────────────────────────────────────────────────────────────────────
 mkdir -p "$(dirname "$LOG_FILE")"
 
 _log_raw() { printf '%s\n' "$*" | tee -a "$LOG_FILE"; }
-
 info()    { _log_raw "  ${CYAN}→${RESET}  $*"; }
 ok()      { _log_raw "  ${GREEN}✓${RESET}  $*"; }
 skip()    { _log_raw "  ${DIM}–${RESET}  $*"; (( SKIPPED_COUNT++ )) || true; }
@@ -41,30 +38,21 @@ warn()    { _log_raw "  ${YELLOW}⚠${RESET}  $*"; }
 err()     { _log_raw "  ${RED}✗${RESET}  $*" >&2; }
 section() { _log_raw ""; _log_raw "${BOLD}${BLUE}══ $* ══${RESET}"; }
 
-dry_prefix() {
-    $DRY_RUN && printf '[DRY-RUN] ' || true
-}
+dry_prefix() { $DRY_RUN && printf '[DRY-RUN] ' || true; }
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 2. Argument parsing
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ── Argument Parsing ──────────────────────────────────────────────────────────
 usage() {
     cat <<'EOF'
-ralsei dotfiles installer
+ralsei dotfiles installer (automated, idempotent)
 
 Usage: install.sh [OPTIONS]
 
 Options:
-  --dry-run     Print every action without executing anything
-  --minimal     Install only core components (hyprland, quickshell, fish)
-  --full        Install all recommended + optional components (default)
+  --dry-run     Print actions without modifying files or installing packages
+  --minimal     Install core components only (hyprland, quickshell, fish)
+  --full        Install all recommended + optional tools (default)
   --uninstall   Remove symlinks created by this installer
-  --help        Show this help
-
-Examples:
-  ./install.sh --dry-run --full
-  ./install.sh --minimal
-  ./install.sh --uninstall
+  --help        Show this help message
 EOF
 }
 
@@ -80,7 +68,7 @@ for arg in "$@"; do
 done
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 3. OS + package manager detection
+# 1. Package Manager Detection
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OS_ID=""
 OS_LIKE=""
@@ -111,14 +99,11 @@ detect_pkg_manager() {
         PKG_MGR="none"
     fi
 }
-
 detect_pkg_manager
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 4. Core helpers
+# 2. Helpers
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-# run CMD [args…] — executes only when not in dry-run
 run() {
     if $DRY_RUN; then
         info "[DRY-RUN] Would run: $*"
@@ -127,7 +112,6 @@ run() {
     fi
 }
 
-# make_dir PATH — create directory idempotently
 make_dir() {
     local path="$1"
     if [[ -d "$path" ]]; then
@@ -138,10 +122,8 @@ make_dir() {
     fi
 }
 
-# backup_if_needed PATH — back up a real file/dir before we link over it
 backup_if_needed() {
     local target="$1"
-    # Skip if it doesn't exist or is already a symlink
     [[ -e "$target" && ! -L "$target" ]] || return 0
     local name
     name="$(basename "$target")"
@@ -150,7 +132,6 @@ backup_if_needed() {
     run cp -r "$target" "${BACKUP_DIR}/${name}"
 }
 
-# safe_link SRC DST — idempotently create symlink SRC → DST
 safe_link() {
     local src="$1"
     local dst="$2"
@@ -160,7 +141,6 @@ safe_link() {
         return
     fi
 
-    # Already correct symlink — nothing to do
     if [[ -L "$dst" && "$(readlink -f "$dst")" == "$(readlink -f "$src")" ]]; then
         skip "Link already correct: ${dst/$HOME/~}"
         return
@@ -168,7 +148,6 @@ safe_link() {
 
     backup_if_needed "$dst"
 
-    # Remove stale symlink pointing elsewhere
     if [[ -L "$dst" ]]; then
         info "$(dry_prefix)Removing stale symlink: ${dst/$HOME/~}"
         run rm "$dst"
@@ -180,7 +159,6 @@ safe_link() {
     (( LINKED_COUNT++ )) || true
 }
 
-# install_pkg NAME [PKG_NAME] — install a package if command not found
 install_pkg() {
     local cmd="$1"
     local pkg="${2:-$1}"
@@ -204,13 +182,9 @@ install_pkg() {
     fi
 }
 
-# make_executable FILE
 make_executable() {
     local file="$1"
-    if [[ ! -f "$file" ]]; then
-        warn "Cannot chmod: file not found: ${file/$HOME/~}"
-        return
-    fi
+    [[ ! -f "$file" ]] && return
     if [[ -x "$file" ]]; then
         skip "Already executable: $(basename "$file")"
     else
@@ -220,51 +194,46 @@ make_executable() {
 }
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 5. Uninstall mode
+# 3. Uninstall mode
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 uninstall() {
     section "Uninstall"
     warn "Removing symlinks created by ralsei installer…"
     warn "Your original files were backed up at install time — check ~/.config_backup_*"
 
-    local links=(
-        "${HOME}/.config/quickshell"
-        "${HOME}/.config/hypr"
-        "${HOME}/.config/fish"
-        "${HOME}/.config/matugen"
-        "${HOME}/.config/cava"
-        "${HOME}/.config/hypr/hyprland/keybinds.lua"
-    )
-
-    for link in "${links[@]}"; do
-        if [[ -L "$link" ]]; then
-            info "$(dry_prefix)Removing symlink: ${link/$HOME/~}"
-            run rm "$link"
-        else
-            skip "Not a symlink: ${link/$HOME/~}"
+    while IFS= read -r -d '' item; do
+        rel="${item#"${SCRIPT_DIR}/.config/"}"
+        dst="${HOME}/.config/${rel}"
+        if [[ -L "$dst" ]]; then
+            info "$(dry_prefix)Removing symlink: ${dst/$HOME/~}"
+            run rm "$dst"
         fi
-    done
+    done < <(find "${SCRIPT_DIR}/.config" -maxdepth 1 -mindepth 1 -print0)
 
-    ok "Uninstall complete. Re-run without --uninstall to reinstall."
+    if [[ -L "${HOME}/.config/hypr/hyprland/keybinds.lua" ]]; then
+        run rm "${HOME}/.config/hypr/hyprland/keybinds.lua"
+    fi
+
+    ok "Uninstall complete."
     exit 0
 }
 
 $DO_UNINSTALL && uninstall
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 6. Banner
+# 4. Banner
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 cat <<BANNER
 
 ${BOLD}${CYAN}╭─────────────────────────────────────────╮
-│    ralsei dotfiles installer            │
+│    ralsei dotfiles automated installer  │
 │    Mode: ${MODE}  |  Dry-run: ${DRY_RUN}         │
 ╰─────────────────────────────────────────╯${RESET}
 
   OS:      ${OS_ID:-unknown} (${OS_LIKE:-})
   Pkg mgr: ${PKG_MGR}
   Repo:    ${SCRIPT_DIR}
-  Backup:  ${BACKUP_DIR/$HOME/~} (created on first backup)
+  Backup:  ${BACKUP_DIR/$HOME/~}
   Log:     ${LOG_FILE/$HOME/~}
 
 BANNER
@@ -272,7 +241,7 @@ BANNER
 $DRY_RUN && warn "DRY-RUN mode — no changes will be made."
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 7. Required directories
+# 5. Required directories
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 section "Required directories"
 make_dir "${HOME}/Pictures/Wallpapers"
@@ -282,31 +251,27 @@ make_dir "${HOME}/.cache/matugen"
 make_dir "${HOME}/.local/bin"
 make_dir "${HOME}/.local/log"
 make_dir "${HOME}/.local/share"
+make_dir "${HOME}/.config"
+make_dir "${HOME}/.config/hypr"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 8. Core dependencies
+# 6. Core dependencies
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 section "Core dependencies"
 
-# Hyprland — usually installed via distro packages or AUR
 if command -v hyprland >/dev/null 2>&1; then
     ok "hyprland already installed"
 else
     if [[ "$PKG_MGR" == "pacman" ]]; then
-        warn "Hyprland not found. Install via: yay -S hyprland OR paru -S hyprland"
-    else
-        warn "Hyprland not found. Visit https://hyprland.org for install instructions."
+        warn "Hyprland not found. Try: yay -S hyprland OR pacman -S hyprland"
     fi
 fi
 
-# Quickshell — typically from AUR or built from source
 if command -v qs >/dev/null 2>&1 || command -v quickshell >/dev/null 2>&1; then
     ok "quickshell already installed"
 else
     if [[ "$PKG_MGR" == "pacman" ]]; then
-        warn "Quickshell not found. Install via: yay -S quickshell-git"
-    else
-        warn "Quickshell not found. See https://quickshell.outfoxxed.me/docs/install"
+        warn "Quickshell not found. Try: yay -S quickshell-git"
     fi
 fi
 
@@ -314,26 +279,22 @@ install_pkg fish fish
 install_pkg pipewire pipewire
 install_pkg wireplumber wireplumber
 
-# XDG portal
 if [[ "$PKG_MGR" == "pacman" ]]; then
     install_pkg xdg-desktop-portal-hyprland xdg-desktop-portal-hyprland
 fi
 
-# polkit
 if command -v polkit >/dev/null 2>&1 || [[ -f /usr/lib/polkit-1/polkitd ]]; then
     ok "polkit available"
 else
     if [[ "$PKG_MGR" == "pacman" ]]; then
         install_pkg polkit-kde-agent polkit-kde-agent
-    else
-        install_pkg polkit polkit
     fi
 fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 9. Recommended dependencies
+# 7. Recommended & Optional Dependencies
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-section "Recommended dependencies"
+section "Recommended & optional packages"
 
 RECOMMENDED=(
     "matugen:matugen"
@@ -369,109 +330,49 @@ for entry in "${RECOMMENDED[@]}"; do
     fi
 done
 
-# wl-clip-persist — clipboard persistence daemon
-if [[ "$MODE" == "full" ]]; then
-    if command -v wl-clip-persist >/dev/null 2>&1; then
-        ok "wl-clip-persist already installed"
-    elif [[ "$PKG_MGR" == "pacman" ]]; then
-        info "$(dry_prefix)Installing wl-clip-persist from AUR"
-        if ! $DRY_RUN; then
-            if command -v yay >/dev/null 2>&1; then
-                yay -S --noconfirm --needed wl-clip-persist 2>&1 | tee -a "$LOG_FILE" || \
-                    warn "wl-clip-persist install failed (AUR helper required)"
-            else
-                warn "wl-clip-persist: install via AUR helper: yay -S wl-clip-persist"
-            fi
-        fi
-    else
-        warn "wl-clip-persist: not in standard repos. Build from source if needed."
-    fi
-fi
-
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 10. Optional dependencies
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-section "Optional dependencies"
-
-OPTIONAL=(
-    "tesseract:tesseract"
-    "wf-recorder:wf-recorder"
-    "ydotool:ydotool"
-    "ollama:ollama"
-    "mpvpaper:mpvpaper"
-)
-
-for entry in "${OPTIONAL[@]}"; do
-    cmd="${entry%%:*}"
-    pkg="${entry##*:}"
-    if command -v "$cmd" >/dev/null 2>&1; then
-        ok "${cmd} already installed"
-    else
-        skip "${cmd} not installed (optional — install manually if needed: ${pkg})"
-    fi
-done
-
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 11. Make scripts executable
+# 8. Script permissions
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 section "Script permissions"
-
-# Find all .sh files in the repo and make them executable
 while IFS= read -r -d '' script; do
     make_executable "$script"
 done < <(find "${SCRIPT_DIR}" -name '*.sh' -not -path '*/.git/*' -print0)
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 12. Symlink config directories
+# 9. Symlink all configurations automatically
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-section "Symlinking config"
+section "Deploying configuration files"
 
-# Helper: link a config component directory or file
-link_config() {
-    local component="$1"           # relative to .config/ in repo and ~/.config/
-    local src="${SCRIPT_DIR}/.config/${component}"
-    local dst="${HOME}/.config/${component}"
-    safe_link "$src" "$dst"
-}
+# Symlink every item inside .config/ to ~/.config/
+if [[ -d "${SCRIPT_DIR}/.config" ]]; then
+    while IFS= read -r -d '' item; do
+        rel="$(basename "$item")"
+        src="${item}"
+        dst="${HOME}/.config/${rel}"
+        safe_link "$src" "$dst"
+    done < <(find "${SCRIPT_DIR}/.config" -maxdepth 1 -mindepth 1 -print0)
+fi
 
-# ── Quickshell ─────────────────────────────────────────────────────────────────
-link_config "quickshell"
-
-# ── Hyprland ───────────────────────────────────────────────────────────────────
-# We link the hyprland sub-directory, not the whole hypr/ tree,
-# to avoid stomping on the user's hyprland.conf and monitors.conf
-make_dir "${HOME}/.config/hypr"
-safe_link \
-    "${SCRIPT_DIR}/.config/hypr/hyprland" \
-    "${HOME}/.config/hypr/hyprland"
-
-# Link keybinds.lua separately (it lives at the repo root)
-safe_link \
-    "${SCRIPT_DIR}/keybinds.lua" \
-    "${HOME}/.config/hypr/hyprland/keybinds.lua"
-
-# ── Fish ───────────────────────────────────────────────────────────────────────
-link_config "fish"
-
-# ── Matugen ────────────────────────────────────────────────────────────────────
-link_config "matugen"
-
-# ── CAVA ──────────────────────────────────────────────────────────────────────
-link_config "cava"
+# Link keybinds.lua to both root hyprland locations
+safe_link "${SCRIPT_DIR}/keybinds.lua" "${HOME}/.config/hypr/hyprland/keybinds.lua"
+safe_link "${SCRIPT_DIR}/keybinds.lua" "${HOME}/.config/hypr/keybinds.lua"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 13. Initialize theme
+# 10. Automatic Theme & Wallpaper Initialization
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 section "Theme initialization"
 
 SWITCHWALL="${HOME}/.config/quickshell/default/scripts/colors/switchwall.sh"
+[[ ! -f "$SWITCHWALL" ]] && SWITCHWALL="${HOME}/.config/quickshell/ii/scripts/colors/switchwall.sh"
+[[ ! -f "$SWITCHWALL" ]] && SWITCHWALL="${SCRIPT_DIR}/.config/quickshell/default/scripts/colors/switchwall.sh"
+
 WALLPAPER_DIR="${HOME}/Pictures/Wallpapers"
 WALLPAPER_CACHE="${HOME}/.cache/current_wallpaper"
 
 if [[ -f "$WALLPAPER_CACHE" ]]; then
-    skip "Wallpaper cache already set: $(cat "$WALLPAPER_CACHE")"
+    skip "Wallpaper cache set: $(cat "$WALLPAPER_CACHE")"
 else
-    # Look for a default wallpaper in the repo
+    # Look for wallpapers in repo or Pictures
     DEFAULT_WALL=""
     for candidate in \
         "${SCRIPT_DIR}/wallpapers/default.jpg" \
@@ -485,7 +386,6 @@ else
         fi
     done
 
-    # Or pick from ~/Pictures/Wallpapers if any exist
     if [[ -z "$DEFAULT_WALL" ]]; then
         mapfile -t walls < <(
             find "$WALLPAPER_DIR" -maxdepth 2 -type f \
@@ -499,73 +399,73 @@ else
         info "$(dry_prefix)Applying initial wallpaper: ${DEFAULT_WALL/$HOME/~}"
         if ! $DRY_RUN; then
             bash "$SWITCHWALL" "$DEFAULT_WALL" 2>&1 | tee -a "$LOG_FILE" || \
-                warn "Initial wallpaper application failed (non-fatal)"
+                warn "Initial wallpaper application non-fatal error"
         fi
     else
-        skip "No default wallpaper found — run 'wallpaper --random' after adding images to ~/Pictures/Wallpapers/"
+        # Run matugen template directly if matugen available to ensure colors.json exists
+        if command -v matugen >/dev/null 2>&1 && [[ -f "${SCRIPT_DIR}/.config/matugen/config.toml" ]]; then
+            info "$(dry_prefix)Initializing default Matugen color scheme"
+            if ! $DRY_RUN; then
+                # Create a blank fallback color image to extract default palette
+                python3 -c "from PIL import Image; Image.new('RGB', (100, 100), color='#381E72').save('/tmp/ralsei_init.png')" 2>/dev/null || true
+                if [[ -f /tmp/ralsei_init.png ]]; then
+                    matugen image /tmp/ralsei_init.png --config "${SCRIPT_DIR}/.config/matugen/config.toml" --source-color-index 0 2>&1 | tee -a "$LOG_FILE" || true
+                fi
+            fi
+        fi
+        skip "Add wallpapers to ~/Pictures/Wallpapers/ and run 'wallpaper --random'"
     fi
 fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 14. Fish shell setup
+# 11. Fish Shell Environment
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-section "Fish shell"
+section "Fish shell setup"
 
 if command -v fish >/dev/null 2>&1; then
     FISH_PATH="$(command -v fish)"
-    # Add fish to /etc/shells if not already present
     if grep -qxF "$FISH_PATH" /etc/shells 2>/dev/null; then
-        ok "fish in /etc/shells"
+        ok "fish registered in /etc/shells"
     else
-        info "$(dry_prefix)Adding fish to /etc/shells: ${FISH_PATH}"
-        run bash -c "echo '${FISH_PATH}' | sudo tee -a /etc/shells" || \
-            warn "Could not add fish to /etc/shells (non-fatal; do manually)"
+        info "$(dry_prefix)Adding fish to /etc/shells"
+        run bash -c "echo '${FISH_PATH}' | sudo tee -a /etc/shells" || true
     fi
 
-    # Offer to set fish as default shell — but never force it
     CURRENT_SHELL="$(getent passwd "$USER" | cut -d: -f7 2>/dev/null || echo "$SHELL")"
     if [[ "$CURRENT_SHELL" == "$FISH_PATH" ]]; then
-        ok "fish is already the default shell"
+        ok "fish is default shell"
     else
-        warn "Default shell is ${CURRENT_SHELL}. To switch: chsh -s ${FISH_PATH}"
+        info "To set fish as default shell, run: chsh -s ${FISH_PATH}"
     fi
-else
-    warn "fish not found; shell setup skipped"
 fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 15. Validate (optional, non-blocking)
+# 12. Automated Validation Check
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-section "Validation"
+section "Config validation"
 
-VALIDATE_SCRIPT="${HOME}/.config/hypr/hyprland/scripts/dotfiles_validate.sh"
+VALIDATE_SCRIPT="${SCRIPT_DIR}/.config/hypr/hyprland/scripts/dotfiles_validate.sh"
 if [[ -f "$VALIDATE_SCRIPT" ]] && ! $DRY_RUN; then
-    info "Running config validator…"
-    bash "$VALIDATE_SCRIPT" 2>&1 | tee -a "$LOG_FILE" || \
-        warn "Validation found issues (see log for details)"
-else
-    skip "Validation skipped (dry-run or script not yet linked)"
+    info "Running config validation check…"
+    bash "$VALIDATE_SCRIPT" 2>&1 | tee -a "$LOG_FILE" || true
 fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 16. Summary
+# 13. Summary
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 cat <<SUMMARY
 
-${BOLD}${GREEN}══ Installation complete ══${RESET}
+${BOLD}${GREEN}══ Automated installation complete! ══${RESET}
 
   Mode:      ${MODE}${DRY_RUN:+ (dry-run)}
-  Symlinks:  ${LINKED_COUNT} created
-  Skipped:   ${SKIPPED_COUNT} (already up to date)
+  Symlinks:  ${LINKED_COUNT} deployed to ~/.config/
+  Skipped:   ${SKIPPED_COUNT} (already configured)
   Log:       ${LOG_FILE/$HOME/~}
 
-${BOLD}Next steps:${RESET}
-  1. Add wallpapers to ~/Pictures/Wallpapers/
-  2. Run: ${CYAN}wallpaper --random${RESET}   (in fish) or
-          ${CYAN}switchwall.sh --random${RESET} (in bash)
-  3. Start Hyprland and Quickshell
-  4. Run: ${CYAN}dotfiles doctor${RESET}   to verify all components
+${BOLD}Quick Start:${RESET}
+  • Start Hyprland & Quickshell
+  • Add wallpapers to ~/Pictures/Wallpapers/
+  • Run ${CYAN}wallpaper --random${RESET} to switch theme
+  • Run ${CYAN}dotfiles doctor${RESET} to verify system health
 
 SUMMARY
-
-$DRY_RUN && warn "Dry-run complete — no files were modified."

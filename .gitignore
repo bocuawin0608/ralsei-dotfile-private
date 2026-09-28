@@ -9,6 +9,6 @@
 *.log
 *.log.*
 *.sig
-
+dots-hyprland/
 pkg/
 src/
