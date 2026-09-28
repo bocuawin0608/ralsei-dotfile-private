@@ -1,0 +1,76 @@
+
+/========================\
+| Checking git repo info |
+\========================/
+
+[===diagnose===] git remote get-url origin
+https://github.com/bocuawin0608/ralsei-dotfile-private.git
+[---SUCCESS---]
+
+[===diagnose===] git rev-parse HEAD
+96adc46e9c32bec67e6aa265b694eed99f4849e8
+[---SUCCESS---]
+
+[===diagnose===] git status
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	.config/Kvantum/
+	.config/chrome-flags.conf
+	.config/code-flags.conf
+	.config/darklyrc
+	.config/dolphinrc
+	.config/fish/auto-Hypr.fish
+	.config/fish/fish_variables
+	.config/fontconfig/
+	.config/foot/
+	.config/fuzzel/
+	.config/hypr/custom/env.lua
+	.config/hypr/custom/execs.lua
+	.config/hypr/custom/general.lua
+	.config/hypr/custom/keybinds.lua
+	.config/hypr/custom/rules.lua
+	.config/hypr/custom/scripts/
+	.config/hypr/custom/variables.lua
+	.config/hypr/hypridle.conf
+	.config/hypr/hyprland/colors.lua
+	.config/hypr/hyprland/general.lua
+	.config/hypr/hyprland/lib/
+	.config/hypr/hyprland/scripts/ai/license_show-loaded-ollama-models.txt
+	.config/hypr/hyprland/scripts/ai/show-loaded-ollama-models.sh
+	.config/hypr/hyprland/scripts/launch_first_available.sh
+	.config/hypr/hyprland/scripts/start_geoclue_agent.sh
+	.config/hypr/hyprland/services/
+	.config/hypr/hyprland/shellOverrides/
+	.config/hypr/hyprlock.conf
+	.config/hypr/hyprlock/
+	.config/kde-material-you-colors/
+	.config/kdeglobals
+	.config/kitty/
+	.config/konsolerc
+	.config/matugen/templates/ags/
+	.config/matugen/templates/fuzzel/
+	.config/matugen/templates/gtk-3.0/
+	.config/matugen/templates/gtk-4.0/
+	.config/matugen/templates/hyprland/
+	.config/matugen/templates/kde/
+	.config/matugen/templates/wallpaper.txt
+	.config/mpv/
+	.config/quickshell/ii/
+	.config/starship.toml
+	.config/thorium-flags.conf
+	.config/wlogout/
+	.config/xdg-desktop-portal/
+	.config/zshrc.d/
+	cache/
+	diagnose
+	diagnose.result
+	dots-extra/
+	dots-hyprland/
+	keybinds.lua
+	sdata/
+	setup
+
+nothing added to commit but untracked files present (use "git add" to track)
