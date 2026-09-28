@@ -86,12 +86,13 @@ fi
 # ── Generate theme via matugen ────────────────────────────────────────────────
 if command -v matugen >/dev/null 2>&1; then
     MATUGEN_CONFIG="${HOME}/.config/matugen/config.toml"
+    [[ ! -f "$MATUGEN_CONFIG" ]] && MATUGEN_CONFIG="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../matugen" && pwd)/config.toml"
     if [[ -f "$MATUGEN_CONFIG" ]]; then
-        matugen image "$WALLPAPER" --config "$MATUGEN_CONFIG" && \
+        matugen image "$WALLPAPER" --config "$MATUGEN_CONFIG" --source-color-index 0 && \
             log "matugen theme generated" || \
             log "WARN: matugen failed (non-fatal)"
     else
-        matugen image "$WALLPAPER" && \
+        matugen image "$WALLPAPER" --source-color-index 0 && \
             log "matugen theme generated (no config)" || \
             log "WARN: matugen failed (non-fatal)"
     fi
